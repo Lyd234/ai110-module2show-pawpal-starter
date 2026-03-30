@@ -33,8 +33,9 @@ I also removed is valid task method from pet class. It seemed redundent as the u
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+The scheduler picks task by priority first, then uses greedy algorithm to fill the other time 
 - Why is that tradeoff reasonable for this scenario?
-
+This treade off is reasonable because it make sure the the most important task that needed to be take care of are completed first before moving to the optional ones.
 ---
 
 ## 3. AI Collaboration
@@ -42,8 +43,12 @@ I also removed is valid task method from pet class. It seemed redundent as the u
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+
+debugging, suggestions, refactoring
+
 - What kinds of prompts or questions were most helpful?
 
+the questions with detailed desctiption of what is needed 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.

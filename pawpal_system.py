@@ -9,6 +9,7 @@ class Task:
     description: str
     duration_minutes: int
     time: str = "00:00"
+    due_date: Optional[date] = None
     frequency: str = "once"
     is_complete: bool = False
     priority: str = "medium"
@@ -257,11 +258,15 @@ class Scheduler:
         return "\n".join(lines)
 
     def complete_task(self, pet_name: str, task_title: str) -> bool:
-        """Mark a task complete for a given pet and reschedule recurring tasks."""
+        """Mark a pending task complete for a given pet and reschedule recurring tasks."""
         for pet in self.owner.get_all_pets():
             if pet.name == pet_name:
                 for task in pet.tasks:
-                    if task.title == task_title:
+                    if (
+                        task.title == task_title
+                        and not task.is_complete
+                        and (task.due_date is None or task.due_date <= date.today())
+                    ):
                         next_task = task.mark_complete()
                         if next_task:
                             pet.add_task(next_task)
