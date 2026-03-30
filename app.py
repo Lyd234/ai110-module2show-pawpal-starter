@@ -5,6 +5,8 @@ st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
 st.title("🐾 PawPal+")
 
+
+
 st.markdown(
     """
 Welcome to the PawPal+ starter app.

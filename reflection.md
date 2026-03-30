@@ -52,8 +52,9 @@ the questions with detailed desctiption of what is needed
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+I didn't accept some of the methods it was suggesting and sometimes it requests massive change when I request something simple, I didn't accept that
 - How did you evaluate or verify what the AI suggested?
-
+i asked is it what the task is asking? and does this code work for the app logiv?
 ---
 
 ## 4. Testing and Verification
@@ -61,13 +62,15 @@ the questions with detailed desctiption of what is needed
 **a. What you tested**
 
 - What behaviors did you test?
+Time sorting, priority sorting, next occurance, conflict detection, edge conditions
 - Why were these tests important?
-
+because they make sure the code handles edge cases,any scheduling conflict. 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
+somewhat confident 
 - What edge cases would you test next if you had more time?
-
+I will test the time validation to see how it will act if inclomplete time string given 
 ---
 
 ## 5. Reflection
@@ -75,11 +78,14 @@ the questions with detailed desctiption of what is needed
 **a. What went well**
 
 - What part of this project are you most satisfied with?
+the scheduling task
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
+I would improve the UOI
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+how important it is to evaluate what ai suggests and making small changes at a time 

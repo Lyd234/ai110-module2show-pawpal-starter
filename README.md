@@ -1,141 +1,89 @@
-# PawPal+ (Module 2 Project)
+PawPal+
+A pet care planning assistant that helps owners schedule daily care tasks across multiple pets — respecting available time, task priorities, and recurring care routines.
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+Overview
+PawPal+ models pet care as a small, testable scheduling system. The app represents owners, pets, and tasks, and exposes a scheduler that builds a daily plan by selecting and ordering pending tasks according to priority, time, and the owner’s available minutes. The Streamlit UI provides a lightweight front end for entering owner/pet/task data and viewing the generated plan.
 
-## Scenario
+Features
+Core scheduling features
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
+Task model with scheduling metadata — Tasks include title, description, duration_minutes, time (HH:MM), due_date, frequency (once, daily, weekly), priority, category, and is_complete. These fields enable time‑aware sorting, recurrence, and conflict detection.
 
-- Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
-- Consider constraints (time available, priority, owner preferences)
-- Produce a daily plan and explain why it chose that plan
+Sorting by time — Scheduler.sort_tasks_by_time() orders tasks by their HH:MM value to produce a stable chronological timeline.
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
+Priority-based selection — Scheduler.sort_tasks_by_priority() ranks tasks high → medium → low. The planner uses this ordering to prefer higher-priority work when time is limited.
 
-## What you will build
+Greedy daily planner — Scheduler.generate_day_plan(available_minutes) implements a deterministic greedy algorithm: sort pending tasks by priority, then include each task if its duration fits the remaining time. This approach is fast, predictable, and easy to test.
 
-Your final app should:
+Conflict warnings — Scheduler.detect_time_conflicts() groups pending tasks by time and returns a single warning per shared HH:MM slot listing colliding task titles. Completed tasks are excluded from conflict checks.
 
-- Let a user enter basic owner + pet info
-- Let a user add/edit tasks (duration + priority at minimum)
-- Generate a daily schedule/plan based on constraints and priorities
-- Display the plan clearly (and ideally explain the reasoning)
-- Include tests for the most important scheduling behaviors
+Daily recurrence handling — Task.mark_complete() and Task.create_next_occurrence() support recurring tasks. Marking a daily or weekly task complete spawns a new Task instance with the next due date while preserving metadata.
 
+Task lifecycle operations — Helper methods let the UI and tests safely manage tasks: complete(), reopen(), toggle_completion(), set_duration(), and set_frequency().
 
+Owner and Pet integration
 
-## Getting started
+Owner aggregation of pets — Owner manages multiple Pet objects and exposes get_all_tasks() and get_pending_tasks() so the scheduler can operate across all pets.
 
-### Setup
+Pet composition of tasks — Pet owns its Task list and provides helpers (add_task, remove_task, pending_tasks, is_valid_task) to validate and manage tasks in the context of pet care needs.
 
-```bash
+UX and reporting
+
+Human‑readable plan explanation — Scheduler.explain_plan() builds a readable explanation of selected tasks for display in the UI.
+
+Schedule summary — Scheduler.get_schedule_summary() returns a concise summary string (number of selected tasks and total minutes) suitable for status banners or test assertions.
+
+Getting Started and Usage
+Prerequisites
+Python 3.8+
+
+Recommended: create an isolated virtual environment.
+
+Install dependencies
+bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-### Suggested workflow
-
-1. Read the scenario carefully and identify requirements and edge cases.
-2. Draft a UML diagram (classes, attributes, methods, relationships).
-3. Convert UML into Python class stubs (no logic yet).
-4. Implement scheduling logic in small increments.
-5. Add tests to verify key behaviors.
-6. Connect your logic to the Streamlit UI in `app.py`.
-7. Refine UML so it matches what you actually built.
-##  Smarter Scheduling 
-
-- `Task` now includes a `time` field so tasks can be ordered by clock time.
-- `Scheduler.sort_tasks_by_time()` sorts tasks using their `HH:MM` time values.
-- `Scheduler.detect_time_conflicts()` finds same-time task collisions and returns warnings instead of crashing.
-- `main.py` now demonstrates out-of-order task input and verifies sorting plus conflict detection in the terminal.
-- `app.py` now uses `Owner`, `Pet`, `Task`, and `Scheduler` methods instead of remaining as UI-only placeholders.
-
-
-
-# 🐾 PawPal+
-
-A pet care planning assistant that helps owners schedule daily care tasks across multiple pets — respecting time constraints, task priorities, and recurring care routines.
----
-### Install dependencies
-
-```bash
+# or at minimum
 pip install streamlit pytest
-```
-### Run the Streamlit app
-```bash
+Run the Streamlit app
+From the project root (where app.py lives):
+
+bash
 streamlit run app.py
-```
-### Run the CLI demo
+Streamlit will start a local server and open the app in your browser. If the browser does not open automatically, paste the local URL shown in the terminal (for example http://localhost:8501) into your browser.
 
-```bash
+CLI demo
+To run the command-line demonstration:
+
+bash
 python main.py
-```
----
-## Testing PawPal+
-### Run the test suite
-
-```bash
+Testing and Known Issues
+Run the test suite
+bash
 python -m pytest test_pawpal.py -v
-```
-To run a specific test class only:
+Run a single test class:
 
-```bash
+bash
 python -m pytest test_pawpal.py::TestConflictDetection -v
-```
-To stop at the first failure:
-```bash
+Stop at first failure:
+
+bash
 python -m pytest test_pawpal.py -x
-```
----
+What the tests cover
+Sorting correctness — chronological ordering and priority ordering.
 
-### What the tests cover
+Recurrence logic — daily and weekly recurrence spawn follow-up tasks with correct metadata.
 
-The suite contains **47 tests** across five areas:
+Conflict detection — grouped warnings for tasks sharing the same HH:MM slot.
 
-**Sorting correctness** — `TestSortByTime`, `TestSortByPriority`
-Verifies that `sort_tasks_by_time` returns tasks in strict chronological (HH:MM) order, including edge cases like midnight boundaries and single-item lists. Also confirms that `sort_tasks_by_priority` produces the correct high → medium → low ordering, handles ties without crashing, and gracefully falls back when an unrecognised priority string (e.g. `"urgent"`) is encountered.
+Happy paths — end-to-end scheduling behavior and summary reporting.
 
-**Recurrence logic** — `TestRecurrence`
-Confirms that marking a `daily` task complete creates a new pending task with a due date exactly one day later, and that a `weekly` task produces a follow-up one week out. Verifies that `once` tasks produce no next occurrence. Also checks that the spawned task inherits all metadata (priority, category, duration) from its parent, and documents a confirmed bug where double-completing a recurring task can spawn a duplicate (see bugs section below).
+Edge cases — zero/negative available time, exact-fit durations, duplicate pets, and helper method behavior.
 
-**Conflict detection** — `TestConflictDetection`
-Verifies that `detect_time_conflicts` returns no warnings when all task times are distinct, and flags exactly one grouped warning per shared HH:MM slot when duplicates exist. Confirms that already-completed tasks are excluded from the check and that three tasks at the same time produce one warning (not three).
+Known issues
+Double-complete bug in Scheduler.complete_task — completing a recurring task can match the newly spawned recurrence if the inner loop does not check not task.is_complete. Fix: ensure the completion condition includes and not task.is_complete.
 
-**Happy paths** — `TestHappyPaths`
-End-to-end scheduling: tasks that collectively fit within available time are all selected; the plan is returned in priority order; completed tasks are excluded from the plan; and `get_schedule_summary` reports the correct task count and total minutes.
+Minor formatting omission in Task.summary() — priority is omitted from the summary string; include self.priority in the formatted output.
 
-**Edge and boundary cases** — `TestEdgeCases`
-Covers zero available time (empty plan), negative available time (clamped to 0), a task whose duration exactly equals remaining time (should be included, not excluded), one-minute-over exclusion, pets and owners with no tasks, removing nonexistent pets or tasks, duplicate pet-object prevention, and helper method behaviour (`can_schedule`, `toggle_completion`, `is_high_priority`).
-
----
-
-### Known bugs found by the suite
-
-| # | Severity | Location | Description | Fix |
-|---|---|---|---|---|
-| 1 | **Medium** | `Scheduler.complete_task` | Matches tasks by title only, not completion status. Double-calling completes the newly spawned recurrence, creating a third task. | Add `and not task.is_complete` to the inner loop condition. |
-| 2 | Low | `Task.summary()` | Priority is omitted from the summary string. | Include `self.priority` in the formatted output. |
----
-### Confidence level
-```
-Reliability: ★★★★☆  (4 / 5)
-```
-The core scheduling logic — priority ordering, time-based sorting, conflict detection, and recurrence — all behave correctly under normal use and across the tested edge cases. The 46/47 pass rate reflects a well-structured system rather than a fragile one.
-
-The one-star deduction reflects two real gaps: the double-complete bug in `Scheduler.complete_task` (a medium-severity correctness issue in a user-facing workflow) and the fact that `Task.summary()` silently drops the priority field. Neither breaks the scheduler's primary function, but both would surface in production. The fixes are each a single line. Once applied, this system would warrant a full 5-star rating within its current feature scope.
----
-## System Overview
-
-### Classes
-
-| Class | Responsibility |
-|---|---|
-| `Task` | A single care action with title, duration, priority, category, time, and recurrence frequency |
-| `Pet` | Holds a list of tasks; filters by completion status; validates tasks against care needs |
-| `Owner` | Manages a list of pets, tracks available daily time, and stores preferences |
-| `Scheduler` | Generates day plans, sorts and groups tasks, detects time conflicts, marks tasks complete |
-
-### Scheduling algorithm
-
-`generate_day_plan` uses a greedy priority-first strategy: it sorts all pending tasks by priority (high → medium → low), then walks the list adding each task that fits within remaining available time. This is not globally optimal but is predictable, fast, and easy to reason about.
+Both issues are small, well-scoped fixes and are documented in the test suite.
