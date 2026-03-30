@@ -10,52 +10,81 @@ def main() -> None:
     owner.add_pet(mochi)
     owner.add_pet(piper)
 
+    # Add tasks out of time order, including a conflict at 09:45
+    evening_snack = Task(
+        title="Evening snack",
+        description="Give Piper a small evening snack.",
+        duration_minutes=10,
+        time="19:30",
+        priority="low",
+        category="feed",
+    )
+
+    lunch = Task(
+        title="Lunchtime feeding",
+        description="Feed Mochi and Piper lunch together.",
+        duration_minutes=20,
+        time="12:15",
+        priority="medium",
+        category="feed",
+    )
+
     morning_walk = Task(
         title="Morning walk",
         description="Take Mochi for a 30-minute walk around the block.",
         duration_minutes=30,
-        frequency="daily",
+        time="09:45",
         priority="high",
         category="walk",
-    )
-
-    breakfast = Task(
-        title="Feed breakfast",
-        description="Serve breakfast to both Mochi and Piper.",
-        duration_minutes=15,
-        frequency="daily",
-        priority="medium",
-        category="feed",
     )
 
     play_time = Task(
         title="Play session",
         description="Play with Piper using a laser toy and enrichment toys.",
         duration_minutes=25,
-        frequency="daily",
-        priority="low",
+        time="09:45",
+        priority="medium",
         category="play",
     )
 
+    mochi.add_task(lunch)
     mochi.add_task(morning_walk)
-    mochi.add_task(breakfast)
+    piper.add_task(evening_snack)
     piper.add_task(play_time)
 
     scheduler = Scheduler(owner)
-    schedule = scheduler.generate_day_plan()
 
-    print("Today's Schedule")
-    print("-------------------")
+    print("All pending tasks (unsorted):")
+    pending_tasks = scheduler.retrieve_pending_tasks()
+    for task in pending_tasks:
+        print(f"- {task.title} at {task.time} [{task.priority}]")
+
+    print("\nPending tasks sorted by time:")
+    sorted_by_time = scheduler.sort_tasks_by_time(pending_tasks)
+    for task in sorted_by_time:
+        print(f"- {task.title} at {task.time} [{task.priority}]")
+
+    print("\nConflict warnings:")
+    conflict_warnings = scheduler.detect_time_conflicts(pending_tasks)
+    if conflict_warnings:
+        for warning in conflict_warnings:
+            print(f"WARNING: {warning}")
+    else:
+        print("No conflicts detected.")
+
+    print("\nPending tasks sorted by priority:")
+    sorted_by_priority = scheduler.sort_tasks_by_priority(pending_tasks)
+    for task in sorted_by_priority:
+        print(f"- {task.title} ({task.duration_minutes}m) [{task.priority}]")
+
+    print("\nSchedule summary using generate_day_plan():")
+    schedule = scheduler.generate_day_plan()
     if not schedule:
         print("No tasks scheduled for today.")
-        return
-
-    for task in schedule:
-        status = "Done" if task.is_complete else "Pending"
-        print(f"- {task.title} ({task.duration_minutes}m) [{task.priority.capitalize()}] - {status}")
-
-    print()
-    print(scheduler.get_schedule_summary(schedule))
+    else:
+        for task in schedule:
+            print(f"- {task.title} at {task.time} ({task.duration_minutes}m) [{task.priority}]")
+        print(scheduler.get_schedule_summary(schedule))
 
 
 if __name__ == "__main__":

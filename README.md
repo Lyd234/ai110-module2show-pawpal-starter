@@ -22,6 +22,14 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## New features added
+
+- `Task` now includes a `time` field so tasks can be ordered by clock time.
+- `Scheduler.sort_tasks_by_time()` sorts tasks using their `HH:MM` time values.
+- `Scheduler.detect_time_conflicts()` finds same-time task collisions and returns warnings instead of crashing.
+- `main.py` now demonstrates out-of-order task input and verifies sorting plus conflict detection in the terminal.
+- `app.py` now uses `Owner`, `Pet`, `Task`, and `Scheduler` methods instead of remaining as UI-only placeholders.
+
 ## Getting started
 
 ### Setup

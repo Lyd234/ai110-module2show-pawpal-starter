@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Dict, List, Optional
 
 
@@ -7,6 +8,7 @@ class Task:
     title: str
     description: str
     duration_minutes: int
+    time: str = "00:00"
     frequency: str = "once"
     is_complete: bool = False
     priority: str = "medium"
@@ -24,9 +26,37 @@ class Task:
         """Mark this task as complete."""
         self.is_complete = True
 
-    def mark_complete(self) -> None:
-        """Alias for complete()."""
+    def mark_complete(self) -> Optional["Task"]:
+        """Mark this task as complete and create the next occurrence if recurring."""
         self.complete()
+        return self.create_next_occurrence()
+
+    def next_due_date(self) -> Optional[date]:
+        """Return the next due date for recurring tasks."""
+        if self.frequency not in {"daily", "weekly"}:
+            return None
+        base_date = self.due_date or date.today()
+        if self.frequency == "daily":
+            return base_date + timedelta(days=1)
+        if self.frequency == "weekly":
+            return base_date + timedelta(weeks=1)
+        return None
+
+    def create_next_occurrence(self) -> Optional["Task"]:
+        """Create the next recurring task instance if this task repeats."""
+        next_date = self.next_due_date()
+        if not next_date:
+            return None
+        return Task(
+            title=self.title,
+            description=self.description,
+            duration_minutes=self.duration_minutes,
+            time=self.time,
+            due_date=next_date,
+            frequency=self.frequency,
+            priority=self.priority,
+            category=self.category,
+        )
 
     def reopen(self) -> None:
         """Mark this task as not complete."""
@@ -172,6 +202,14 @@ class Scheduler:
             key=lambda task: priority_order.get(task.priority.lower(), 2),
         )
 
+    def sort_tasks_by_time(self, tasks: Optional[List[Task]] = None) -> List[Task]:
+        """Sort tasks by their time string in HH:MM format."""
+        tasks_to_sort = tasks if tasks is not None else self.retrieve_all_tasks()
+        return sorted(
+            tasks_to_sort,
+            key=lambda task: tuple(map(int, task.time.split(':'))),
+        )
+
     def group_tasks_by_pet(self) -> Dict[str, List[Task]]:
         """Group tasks by the pet they belong to."""
         grouped: Dict[str, List[Task]] = {}
@@ -189,6 +227,25 @@ class Scheduler:
                 time_left -= task.duration_minutes
         return selected
 
+    def detect_time_conflicts(self, tasks: Optional[List[Task]] = None) -> List[str]:
+        """Detect tasks that share the same time and return warning messages."""
+        tasks_to_check = tasks if tasks is not None else self.retrieve_pending_tasks()
+        if not tasks_to_check:
+            return []
+
+        time_map: Dict[str, List[Task]] = {}
+        for task in tasks_to_check:
+            time_map.setdefault(task.time, []).append(task)
+
+        warnings: List[str] = []
+        for task_time, same_time_tasks in time_map.items():
+            if len(same_time_tasks) > 1:
+                titles = ", ".join([task.title for task in same_time_tasks])
+                warnings.append(
+                    f"Conflict at {task_time}: multiple tasks scheduled at the same time ({titles})."
+                )
+        return warnings
+
     def explain_plan(self, tasks: List[Task]) -> str:
         """Build a readable explanation of the selected tasks."""
         if not tasks:
@@ -200,12 +257,14 @@ class Scheduler:
         return "\n".join(lines)
 
     def complete_task(self, pet_name: str, task_title: str) -> bool:
-        """Mark a task complete for a given pet."""
+        """Mark a task complete for a given pet and reschedule recurring tasks."""
         for pet in self.owner.get_all_pets():
             if pet.name == pet_name:
                 for task in pet.tasks:
                     if task.title == task_title:
-                        task.complete()
+                        next_task = task.mark_complete()
+                        if next_task:
+                            pet.add_task(next_task)
                         return True
         return False
 
